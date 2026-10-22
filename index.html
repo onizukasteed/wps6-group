@@ -35,6 +35,8 @@ header p{margin:0;color:var(--muted)}
 .tabs button{font:500 15px "Mitr",sans-serif;border:0;background:none;color:var(--muted);padding:7px 14px;border-radius:999px;cursor:pointer}
 .tabs button[aria-pressed="true"]{background:var(--forest);color:var(--paper)}
 .bar .ghost{margin-left:auto}
+.bar .ghost+.ghost{margin-left:0}
+.ghost:disabled{opacity:.6;cursor:wait}
 button:focus-visible,input:focus-visible{outline:2px solid var(--forest);outline-offset:2px}
 .hint{color:var(--muted);font-size:13px;margin:2px 0 10px}
 .board{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
@@ -87,6 +89,7 @@ footer{margin-top:24px;font-size:12.5px;color:var(--muted)}
       <button data-day="1" aria-pressed="true">เสาร์ 24</button>
       <button data-day="2" aria-pressed="false">อาทิตย์ 25</button>
     </div>
+    <button class="ghost" id="saveimg">บันทึกรูปแผน</button>
     <button class="ghost" id="share">แชร์ลิงก์กลุ่ม</button>
   </div>
   <p class="hint">แตะชื่อวงเพื่อเลือก ตัวอักษรในวงกลมคือเพื่อนที่เลือกวงนั้น สียิ่งเข้มยิ่งมีคนอยากดูเยอะ กรอบแดงคือวงที่คุณเลือกทับเวลากัน</p>
@@ -224,6 +227,64 @@ $("share").onclick=async()=>{
 db.channel("picks-"+group)
   .on("postgres_changes",{event:"*",schema:"public",table:"picks",filter:`group_code=eq.${group}`},()=>{clearTimeout(load.t);load.t=setTimeout(load,300)})
   .subscribe();
+
+const EVENT={title:"วันปล่อยเสือ 6",sub:"24–25 ต.ค. 2569",file:"wanploiseur6",days:{1:"เสาร์ 24 ต.ค.",2:"อาทิตย์ 25 ต.ค."},stage:x=>"เวที"+x.stage.name};
+
+/* ===== บันทึกรูปแผน ===== */
+async function savePlan(){
+  if(!me){toast("ใส่ชื่อเล่นก่อน");$("nm")?.focus();return}
+  const who={};rows.forEach(r=>{(who[r.set_key]??=[]).push(r.member)});
+  const days=[1,2].map(d=>({d,list:sets[d].filter(x=>(who[x.key]||[]).includes(me)).sort((a,b)=>a.s-b.s||a.e-b.e)})).filter(o=>o.list.length);
+  if(!days.length){toast("ยังไม่ได้เลือกวง");return}
+  const btn=$("saveimg");btn.disabled=true;btn.textContent="กำลังทำรูป…";
+  try{
+    const sample="กขคงABC0123";
+    await Promise.all([document.fonts.load('600 64px Mitr',sample),document.fonts.load('500 40px Mitr',sample),document.fonts.load('400 26px Sarabun',sample),document.fonts.load('600 28px Sarabun',sample)]).catch(()=>{});
+    const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const W=1080,P=72,ROW=112;
+    let H=P+170;days.forEach(o=>H+=96+o.list.length*ROW+24);H+=90;
+    const c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");
+    const F={t:'"Mitr","Sarabun",sans-serif',b:'"Sarabun",sans-serif'};
+    const fit=(txt,weight,size,fam,maxW,min)=>{let s=size;g.font=`${weight} ${s}px ${fam}`;while(g.measureText(txt).width>maxW&&s>min){s-=2;g.font=`${weight} ${s}px ${fam}`}
+      if(g.measureText(txt).width>maxW){while(txt.length>1&&g.measureText(txt+"…").width>maxW)txt=txt.slice(0,-1);txt+="…"}return txt};
+    g.fillStyle=css("--bg");g.fillRect(0,0,W,H);
+    g.fillStyle=css("--forest");g.fillRect(0,0,W,14);
+    g.textBaseline="alphabetic";
+    let y=P+60;
+    g.fillStyle=css("--forest");g.fillText(fit(EVENT.title,600,64,F.t,W-2*P,40),P,y);
+    y+=52;g.fillStyle=css("--muted");g.fillText(fit("แผนของ "+me+" · "+EVENT.sub,400,30,F.b,W-2*P,22),P,y);
+    y+=58;
+    for(const o of days){
+      g.fillStyle=css("--ink");g.fillText(fit(EVENT.days[o.d],500,40,F.t,W-2*P,28),P,y+30);
+      g.fillStyle=css("--line");g.fillRect(P,y+52,W-2*P,2);
+      y+=96;
+      o.list.forEach((x,i)=>{
+        const p=o.list[i-1],ov=p&&p.e>x.s?Math.min(p.e,x.e)-x.s:0;
+        g.fillStyle=css("--muted");g.fillText(fit(fmt(x.s),600,30,F.b,150,24),P,y+34);
+        g.fillText(fit("–"+fmt(x.e),400,24,F.b,150,18),P,y+66);
+        g.fillStyle=css(x.stage.color);g.fillRect(P+170,y,10,ROW-26);
+        g.fillStyle=css("--ink");g.fillText(fit(x.name,500,40,F.t,W-2*P-200,26),P+200,y+38);
+        const others=(who[x.key]||[]).filter(n=>n!==me);
+        let sub=EVENT.stage(x)+(others.length?" · ไปกับ "+others.join(", "):"");
+        g.fillStyle=css("--muted");g.fillText(fit(sub,400,26,F.b,W-2*P-200,18),P+200,y+76);
+        if(ov){g.fillStyle=css("--warn");const w="ทับกับ "+p.name+" "+ov+" นาที";g.fillText(fit(w,600,22,F.b,W-2*P-200,16),P+200,y+ROW-8)}
+        y+=ROW;
+      });
+      y+=24;
+    }
+    g.fillStyle=css("--muted");g.fillText(fit("เลือกวงกับเพื่อนที่ "+location.host+location.pathname,400,24,F.b,W-2*P,16),P,H-46);
+    const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+    const fname=EVENT.file+"-"+me.replace(/[^\p{L}\p{N}]+/gu,"_")+".png";
+    const file=new File([blob],fname,{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:EVENT.title});return}catch(e){if(e.name==="AbortError")return}
+    }
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast("บันทึกรูปแล้ว");
+  }catch(e){console.error(e);toast("ทำรูปไม่สำเร็จ ลองอีกครั้ง")}
+  finally{btn.disabled=false;btn.textContent="บันทึกรูปแผน"}
+}
+$("saveimg").onclick=savePlan;
 
 renderWho();render();load();
 </script>

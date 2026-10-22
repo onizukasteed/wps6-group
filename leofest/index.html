@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LEO FEST 2026 · เลือกวงกับเพื่อน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --bg:#efe2d3; --paper:#faf3ea; --ink:#241513; --muted:#715a52; --line:#dcc6b4; --grid:#ead8c8;
+  --forest:#b0161b; --treasure:#5c5856; --mystery:#d2401c; --warn:#b3261e;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#140b0a;--paper:#1f1311;--ink:#f6e6de;--muted:#b6958a;--line:#3d2520;--grid:#2c1b18;
+    --forest:#ff5a4a;--treasure:#a9a29d;--mystery:#ff6a3d;--warn:#ffb4a8;color-scheme:dark}
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Sarabun",system-ui,sans-serif;font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:880px;margin:0 auto;padding:16px 12px 40px}
+h1{font:600 clamp(28px,7vw,44px)/1.05 "Mitr",sans-serif;margin:4px 0 2px;color:var(--forest)}
+header p{margin:0;color:var(--muted)}
+.who{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 4px}
+.who input{font:inherit;padding:8px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);min-width:0;flex:1 1 160px}
+.btn{font:500 14px "Mitr",sans-serif;border:0;background:var(--forest);color:var(--paper);padding:9px 16px;border-radius:999px;cursor:pointer}
+.ghost{font:14px "Sarabun",sans-serif;border:1.5px solid var(--line);background:none;color:var(--muted);border-radius:999px;padding:7px 12px;cursor:pointer}
+.me{font:500 15px "Mitr",sans-serif}
+.status{font-size:13px;color:var(--muted)}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:10px 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tabs{display:flex;background:var(--paper);border:1.5px solid var(--line);border-radius:999px;padding:3px}
+.tabs button{font:500 15px "Mitr",sans-serif;border:0;background:none;color:var(--muted);padding:7px 14px;border-radius:999px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--forest);color:var(--paper)}
+.bar .ghost{margin-left:auto}
+button:focus-visible,input:focus-visible{outline:2px solid var(--forest);outline-offset:2px}
+.hint{color:var(--muted);font-size:13px;margin:2px 0 10px}
+.board{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.heads,.grid{display:grid;grid-template-columns:44px repeat(2,1fr)}
+.heads{border-bottom:1.5px solid var(--line)}
+.heads div{font:500 13px/1.2 "Mitr",sans-serif;padding:8px 4px;text-align:center;border-left:1px solid var(--grid)}
+.heads small{display:block;font:400 10.5px "Sarabun",sans-serif;color:var(--muted)}
+.heads .sw{display:block;height:4px;border-radius:2px;margin:0 auto 5px;width:60%}
+.grid{position:relative}
+.axis{position:relative}
+.axis span{position:absolute;right:5px;transform:translateY(-50%);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.col{position:relative;border-left:1px solid var(--grid)}
+.hl{position:absolute;left:0;right:0;border-top:1px dashed var(--grid);pointer-events:none}
+.set{position:absolute;left:3px;right:3px;border-radius:8px;border:1.5px solid var(--c);background:color-mix(in srgb,var(--c) calc(var(--heat,0) * 1%),var(--paper));color:var(--ink);text-align:left;padding:4px 5px;cursor:pointer;overflow:hidden;font:inherit;display:flex;flex-direction:column;gap:1px}
+.set .t{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.2}
+.set .n{font:500 12.5px/1.15 "Mitr",sans-serif;word-break:break-word}
+.set .x{font-size:10px;color:var(--muted);line-height:1.15}
+.chips{display:flex;flex-wrap:wrap;gap:2px;margin-top:auto}
+.chips i{font:600 9.5px/16px "Sarabun",sans-serif;font-style:normal;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--ink);color:var(--paper);text-align:center}
+.set.on{background:var(--c);border-color:var(--c);color:#fff}
+.set.on .t,.set.on .x{color:rgba(255,255,255,.85)}
+.set.on .chips i{background:#fff;color:#222}
+.set.clash{box-shadow:inset 0 0 0 2.5px var(--warn)}
+.set .n{font-size:14px}.set .t{font-size:11.5px}
+@media (min-width:640px){.set .n{font-size:16px}.heads div{font-size:16px}}
+h2{font:600 22px "Mitr",sans-serif;margin:28px 0 8px;color:var(--forest)}
+.plan{list-style:none;margin:0;padding:0}
+.plan li{display:grid;grid-template-columns:92px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.plan .when{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+.plan .nm{font:500 16px "Mitr",sans-serif}
+.plan .where{font-size:13px;color:var(--muted)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.warn{grid-column:1/-1;color:var(--warn);font-size:13px;margin-top:-4px}
+.empty{color:var(--muted);padding:12px 0}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+footer{margin-top:24px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>LEO FEST 2026</h1>
+    <p>7–8 พ.ย. 2569 · 2 เวที เดินสลับกันได้ทั้งคืน</p>
+  </header>
+
+  <div class="who" id="who"></div>
+
+  <div class="bar">
+    <div class="tabs" role="group" aria-label="เลือกวัน">
+      <button data-day="1" aria-pressed="true">เสาร์ 7</button>
+      <button data-day="2" aria-pressed="false">อาทิตย์ 8</button>
+    </div>
+    <button class="ghost" id="share">แชร์ลิงก์กลุ่ม</button>
+  </div>
+  <p class="hint">แตะชื่อวงเพื่อเลือก ตัวอักษรในวงกลมคือเพื่อนที่เลือกวงนั้น สียิ่งเข้มยิ่งมีคนอยากดูเยอะ กรอบแดงคือวงที่คุณเลือกทับเวลากัน</p>
+
+  <div class="board">
+    <div class="heads" id="heads"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <h2 id="planTitle">แผนของฉัน</h2>
+  <ul class="plan" id="plan"></ul>
+
+  <h2>วงที่เพื่อนเลือกตรงกัน</h2>
+  <ul class="plan" id="top"></ul>
+
+  <footer>เวลาตามโปสเตอร์ทางการ ตารางอาจเปลี่ยน เช็กเพจผู้จัดอีกครั้งก่อนไป</footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===== ตั้งค่า Supabase (Project Settings → API) ===== */
+const SUPABASE_URL = "https://kpyzyyjjnoamwyyzxvlo.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweXp5eWpqbm9hbXd5eXp4dmxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzOTY3NjEsImV4cCI6MjEwNzk3Mjc2MX0.mK-TxEJp6gOyewjpJaPl9wRBE1njT-er_Nia5R56HBI";
+/* ==================================================== */
+
+const STAGES=[
+  {id:"treasure",name:"Treasure",en:"Treasure Stage",color:"--treasure"},
+  {id:"mystery",name:"Mystery",en:"Mystery Stage",color:"--mystery"}
+];
+const D={
+1:{
+ treasure:[["15:45","16:15","DAZZ BOYS"],["16:25","16:55","MANG x SUGAR 'N SPICE"],["17:05","17:35","PAE ARAK"],["17:50","18:50","GUNCHARLIE"],["19:05","20:05","PUN"],["20:20","21:20","D GERRARD"],["21:35","22:35","TIMETHAI"],["22:50","23:50","SLOT MACHINE"]],
+ mystery:[["16:35","17:05","WATCHI"],["17:15","17:45","STEAK N' CO"],["18:00","19:00","THE DARKEST ROMANCE"],["19:15","20:15","ZEAL"],["20:30","21:30","SWEET MULLET"],["21:45","22:45","LOMOSONIC"],["23:00","00:00","RETROSPECT"]]
+},
+2:{
+ treasure:[["16:00","16:30","SALTYSALMON"],["16:40","17:10","KRYPTONYTE"],["17:20","17:50","CORNBOI"],["18:05","18:50","BOWKYLION"],["19:05","20:05","INK WARUNTORN"],["20:20","21:20","JOEY PHUWASIT"],["21:35","22:35","NONT TANONT"],["22:50","23:50","YOUNGOHM"]],
+ mystery:[["16:35","17:05","M DAOSAI"],["17:15","17:45","MANOP"],["18:00","19:00","OAT PRAMOTE"],["19:15","20:15","LITTLE JOHN"],["20:30","21:30","SILLY FOOLS"],["21:45","22:45","THREE MAN DOWN"],["23:00","00:00","TAITOSMITH"]]
+}};
+const START=15*60+30, END=24*60+15, PX=1.8;
+const toMin=t=>{let [h,m]=t.split(":").map(Number);if(h<12)h+=24;return h*60+m};
+const fmt=m=>String(Math.floor(m/60)%24).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const sets={},byKey={};
+for(const day of [1,2]){sets[day]=[];for(const st of STAGES){const arr=D[day][st.id];arr.forEach((r,i)=>{const s=toMin(r[0]),e=toMin(r[1]);const x={key:`lf-${day}-${st.id}-${i}`,day,stage:st,s,e,name:r[2],extra:""};sets[day].push(x);byKey[x.key]=x})}}
+
+/* group code from URL */
+const params=new URLSearchParams(location.search);
+let group=(params.get("g")||"").replace(/[^a-z0-9-]/gi,"").slice(0,40);
+if(group.length<4){group=Math.random().toString(36).slice(2,10);params.set("g",group);history.replaceState(null,"","?"+params.toString())}
+
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+let me=ls.get("lf26-name")||"";
+let day=ls.get("lf26-day")==="2"?2:1;
+let rows=[]; // {member,set_key}
+
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id);
+function toast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>el.classList.remove("show"),2200)}
+
+function renderWho(){
+  const w=$("who");
+  if(!me){
+    w.innerHTML=`<input id="nm" maxlength="30" placeholder="ชื่อเล่นของคุณ" aria-label="ชื่อเล่นของคุณ"><button class="btn" id="go">เริ่มเลือกวง</button>`;
+    const go=()=>{const v=$("nm").value.trim();if(!v){$("nm").focus();return}me=v;ls.set("lf26-name",me);renderWho();render()};
+    $("go").onclick=go;$("nm").onkeydown=e=>{if(e.key==="Enter")go()};
+  }else{
+    const n=new Set(rows.map(r=>r.member)).size;
+    w.innerHTML=`<span class="me">คุณคือ ${esc(me)}</span><button class="ghost" id="rename">เปลี่ยนชื่อ</button><span class="status">ในกลุ่มนี้ ${n} คน</span>`;
+    $("rename").onclick=()=>{if(rows.some(r=>r.member===me)&&!confirm("วงที่เลือกไว้ด้วยชื่อเดิมจะยังอยู่ในชื่อเดิม เปลี่ยนชื่อต่อไหม?"))return;me="";ls.set("lf26-name","");renderWho();render()};
+  }
+}
+
+function render(){
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.day===day)));
+  const who={};rows.forEach(r=>{(who[r.set_key]??=[]).push(r.member)});
+  const people=new Set(rows.map(r=>r.member)).size||1;
+  const all=sets[day];
+  const mine=all.filter(x=>(who[x.key]||[]).includes(me)).sort((a,b)=>a.s-b.s||a.e-b.e);
+  const cl=new Set();for(let i=0;i<mine.length;i++)for(let j=i+1;j<mine.length;j++){const a=mine[i],b=mine[j];if(a.s<b.e&&b.s<a.e){cl.add(a.key);cl.add(b.key)}}
+  const H=(END-START)*PX;
+  let html=`<div class="axis" style="height:${H}px">`;for(let m=Math.ceil(START/60)*60;m<=END;m+=60)html+=`<span style="top:${(m-START)*PX}px">${fmt(m)}</span>`;html+="</div>";
+  let lines="";for(let m=Math.ceil(START/60)*60;m<END;m+=60)lines+=`<div class="hl" style="top:${(m-START)*PX}px"></div>`;
+  for(const st of STAGES){
+    html+=`<div class="col" style="height:${H}px">${lines}`;
+    for(const x of all.filter(a=>a.stage===st)){
+      const ws=who[x.key]||[],on=ws.includes(me),heat=Math.round(ws.length/people*45);
+      const chips=ws.map(n=>`<i title="${esc(n)}">${esc([...n][0].toUpperCase())}</i>`).join("");
+      html+=`<button class="set${on?" on":""}${cl.has(x.key)?" clash":""}" data-k="${x.key}" aria-pressed="${on}" aria-label="${esc(x.name)} ${fmt(x.s)} มี ${ws.length} คนเลือก" style="--c:var(${st.color});--heat:${heat};top:${(x.s-START)*PX+2}px;height:${(x.e-x.s)*PX-4}px"><span class="t">${fmt(x.s)}</span><span class="n">${esc(x.name)}</span>${x.extra?`<span class="x">${esc(x.extra)}</span>`:""}${chips?`<span class="chips">${chips}</span>`:""}</button>`;
+    }
+    html+="</div>";
+  }
+  $("grid").innerHTML=html;
+
+  $("planTitle").textContent="แผนของฉัน · "+(day===1?"เสาร์ 7 พ.ย.":"อาทิตย์ 8 พ.ย.");
+  $("plan").innerHTML=!me?'<li class="empty">ใส่ชื่อเล่นด้านบนก่อน แล้วแตะชื่อวงในตาราง</li>':!mine.length?'<li class="empty">ยังไม่ได้เลือกวง แตะชื่อวงในตารางด้านบนได้เลย</li>':mine.map((x,i)=>{
+    const p=mine[i-1];let w="";
+    if(p&&p.e>x.s)w=`<div class="warn">ทับกับ ${esc(p.name)} ประมาณ ${Math.min(p.e,x.e)-x.s} นาที</div>`;
+    const others=(who[x.key]||[]).filter(n=>n!==me);
+    return `<li><span class="when">${fmt(x.s)}–${fmt(x.e)}</span><span><span class="nm">${esc(x.name)}</span><br><span class="where"><span class="dot" style="background:var(${x.stage.color})"></span>${x.stage.en}${others.length?` · ไปกับ ${others.map(esc).join(", ")}`:""}</span></span>${w}</li>`}).join("");
+
+  const top=all.map(x=>({x,ws:who[x.key]||[]})).filter(o=>o.ws.length>=2).sort((a,b)=>b.ws.length-a.ws.length||a.x.s-b.x.s);
+  $("top").innerHTML=top.length?top.map(({x,ws})=>`<li><span class="when">${fmt(x.s)}</span><span><span class="nm">${esc(x.name)}</span> <span class="where">· ${ws.length} คน</span><br><span class="where"><span class="dot" style="background:var(${x.stage.color})"></span>${x.stage.en} · ${ws.map(esc).join(", ")}</span></span></li>`).join(""):'<li class="empty">ยังไม่มีวงที่เลือกตรงกันตั้งแต่ 2 คนขึ้นไป</li>';
+}
+
+async function load(){
+  const {data,error}=await db.from("picks").select("member,set_key").eq("group_code",group);
+  if(error){toast("โหลดข้อมูลไม่ได้ ตรวจค่า Supabase ในไฟล์");console.error(error);return}
+  rows=data.filter(r=>byKey[r.set_key]);renderWho();render();
+}
+
+$("grid").addEventListener("click",async e=>{
+  const b=e.target.closest(".set");if(!b)return;
+  if(!me){toast("ใส่ชื่อเล่นก่อนเลือกวง");$("nm")?.focus();return}
+  const k=b.dataset.k,had=rows.some(r=>r.member===me&&r.set_key===k);
+  rows=had?rows.filter(r=>!(r.member===me&&r.set_key===k)):[...rows,{member:me,set_key:k}];render();
+  const q=had?db.from("picks").delete().match({group_code:group,member:me,set_key:k})
+             :db.from("picks").upsert({group_code:group,member:me,set_key:k},{onConflict:"group_code,member,set_key",ignoreDuplicates:true});
+  const {error}=await q;if(error){toast("บันทึกไม่สำเร็จ ลองอีกครั้ง");console.error(error);load()}
+});
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{day=+b.dataset.day;ls.set("lf26-day",String(day));render()});
+$("share").onclick=async()=>{
+  const url=location.origin+location.pathname+"?g="+group;
+  if(navigator.share){try{await navigator.share({title:"LEO FEST 2026 · เลือกวงกัน",url});return}catch(e){if(e.name==="AbortError")return}}
+  try{await navigator.clipboard.writeText(url);toast("คัดลอกลิงก์กลุ่มแล้ว")}catch(e){prompt("คัดลอกลิงก์นี้",url)}
+};
+
+db.channel("lf-picks-"+group)
+  .on("postgres_changes",{event:"*",schema:"public",table:"picks",filter:`group_code=eq.${group}`},()=>{clearTimeout(load.t);load.t=setTimeout(load,300)})
+  .subscribe();
+
+renderWho();render();load();
+</script>
+</body>
+</html>
